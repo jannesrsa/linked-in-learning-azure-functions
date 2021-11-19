@@ -16,7 +16,7 @@ public class PhotoRepository
             throw new ArgumentNullException(nameof(photoUpload));
         }
 
-        var containerClient = await GetBlobContainerClient(cancellationToken);
+        var containerClient = await GetBlobContainerClient(cancellationToken: cancellationToken);
 
         var newId = Guid.NewGuid();
         var blobName = $"{newId}.jpg";
@@ -27,13 +27,34 @@ public class PhotoRepository
         return newId;
     }
 
-    private async Task<BlobContainerClient> GetBlobContainerClient(CancellationToken cancellationToken)
+    public async Task InsertAsync(Stream stream, string blobName, ImageSize imageSize = default, CancellationToken cancellationToken = default)
     {
-        var containerClient = _blobServiceClient.GetBlobContainerClient(BlobContainerNames.Photos);
+        if (stream is null)
+        {
+            throw new ArgumentNullException(nameof(stream));
+        }
+
+        stream.Seek(0, SeekOrigin.Begin);
+
+        var containerClient = await GetBlobContainerClient(imageSize, cancellationToken);
+
+        var blobClient = containerClient.GetBlobClient(blobName);
+        await blobClient.UploadAsync(stream, cancellationToken);
+    }
+
+    private async Task<BlobContainerClient> GetBlobContainerClient(ImageSize imageSize = default, CancellationToken cancellationToken = default)
+    {
+        var containerName = imageSize switch
+        {
+            ImageSize.Medium or ImageSize.Small => $"{BlobContainerNames.Photos}-{imageSize.ToString().ToLower()}",
+            _ => BlobContainerNames.Photos,
+        };
+
+        var containerClient = _blobServiceClient.GetBlobContainerClient(containerName);
 
         if (!await containerClient.ExistsAsync(cancellationToken))
         {
-            containerClient = await _blobServiceClient.CreateBlobContainerAsync(BlobContainerNames.Photos, cancellationToken: cancellationToken);
+            containerClient = await _blobServiceClient.CreateBlobContainerAsync(containerName, cancellationToken: cancellationToken);
         }
 
         return containerClient;
