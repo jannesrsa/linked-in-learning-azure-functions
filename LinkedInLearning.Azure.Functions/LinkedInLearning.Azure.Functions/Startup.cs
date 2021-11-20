@@ -3,6 +3,9 @@ using Microsoft.Azure.Functions.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.WindowsAzure.Storage;
+using Photos.AnalyzerService;
+using Serilog;
+using Serilog.Events;
 
 [assembly: FunctionsStartup(typeof(LinkedInLearning.Azure.Functions.Startup))]
 
@@ -16,6 +19,16 @@ public class Startup : FunctionsStartup
 
         builder.Services.AddSingleton(ConfigureBlobService(configuration));
         builder.Services.AddSingleton<PhotoRepository>();
+
+        var loggerConfiguration = new LoggerConfiguration()
+            .MinimumLevel.Debug()
+            .MinimumLevel.Override("Azure", LogEventLevel.Error)
+            .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
+            .Enrich.FromLogContext()
+            .WriteTo.Console()
+            .CreateLogger();
+
+        builder.Services.AddLogging(op => op.AddSerilog(loggerConfiguration));
     }
 
     private static BlobServiceClient ConfigureBlobService(IConfiguration configuration)

@@ -1,4 +1,6 @@
-﻿namespace LinkedInLearning.Azure.Functions.Repositories;
+﻿using Serilog;
+
+namespace LinkedInLearning.Azure.Functions.Repositories;
 
 public class PhotoRepository
 {
@@ -29,17 +31,24 @@ public class PhotoRepository
 
     public async Task InsertAsync(Stream stream, string blobName, ImageSize imageSize = default, CancellationToken cancellationToken = default)
     {
-        if (stream is null)
+        try
         {
-            throw new ArgumentNullException(nameof(stream));
+            if (stream is null)
+            {
+                throw new ArgumentNullException(nameof(stream));
+            }
+
+            stream.Seek(0, SeekOrigin.Begin);
+
+            var containerClient = await GetBlobContainerClient(imageSize, cancellationToken);
+
+            var blobClient = containerClient.GetBlobClient(blobName);
+            await blobClient.UploadAsync(stream, cancellationToken);
         }
-
-        stream.Seek(0, SeekOrigin.Begin);
-
-        var containerClient = await GetBlobContainerClient(imageSize, cancellationToken);
-
-        var blobClient = containerClient.GetBlobClient(blobName);
-        await blobClient.UploadAsync(stream, cancellationToken);
+        catch (Exception ex)
+        {
+            Log.Logger.Error(ex.Message);
+        }
     }
 
     private async Task<BlobContainerClient> GetBlobContainerClient(ImageSize imageSize = default, CancellationToken cancellationToken = default)
