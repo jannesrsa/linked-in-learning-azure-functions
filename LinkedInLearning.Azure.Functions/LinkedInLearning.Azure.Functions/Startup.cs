@@ -3,7 +3,6 @@ using Microsoft.Azure.Functions.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.WindowsAzure.Storage;
-using Photos.AnalyzerService;
 using Serilog;
 using Serilog.Events;
 
@@ -24,8 +23,10 @@ public class Startup : FunctionsStartup
             .MinimumLevel.Debug()
             .MinimumLevel.Override("Azure", LogEventLevel.Error)
             .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
+            .MinimumLevel.Override("DurableTask", LogEventLevel.Error)
             .Enrich.FromLogContext()
             .WriteTo.Console()
+            .WriteTo.Seq("http://localhost:6341")
             .CreateLogger();
 
         builder.Services.AddLogging(op => op.AddSerilog(loggerConfiguration));
