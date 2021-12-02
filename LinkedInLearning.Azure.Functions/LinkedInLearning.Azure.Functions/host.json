@@ -1,11 +1,10 @@
 {
   "version": "2.0",
   "logging": {
-    "applicationInsights": {
-      "samplingSettings": {
-        "isEnabled": true,
-        "excludedTypes": "Request"
-      }
+    "logLevel": {
+      "default": "Error",
+      "Function.PhotosAnalyzer": "Information",
+      "Function.PhotoAzureQueueStorage": "Information"
     }
   }
 }

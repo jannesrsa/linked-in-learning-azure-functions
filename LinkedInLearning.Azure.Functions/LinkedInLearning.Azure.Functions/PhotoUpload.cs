@@ -12,14 +12,12 @@ public class PhotoUpload
     }
 
     [FunctionName(nameof(PhotoUpload))]
-    public async Task<IActionResult> Run(
-        [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = null)] HttpRequest req,
+    public async Task<byte[]> Run(
+        [ActivityTrigger] PhotoUploadModel photoUploadModel,
         CancellationToken cancellationToken)
     {
-        var photoUpload = await req.ReadFromJsonAsync<PhotoUploadModel>(cancellationToken);
+        (_, var contentHash) = await _photoRepository.InsertAsync(photoUploadModel, cancellationToken);
 
-        var newId = await _photoRepository.InsertAsync(photoUpload, cancellationToken);
-
-        return new OkObjectResult(newId);
+        return contentHash;
     }
 }

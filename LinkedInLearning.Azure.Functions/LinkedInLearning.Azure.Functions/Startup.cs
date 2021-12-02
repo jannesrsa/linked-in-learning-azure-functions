@@ -3,8 +3,6 @@ using Microsoft.Azure.Functions.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.WindowsAzure.Storage;
-using Serilog;
-using Serilog.Events;
 
 [assembly: FunctionsStartup(typeof(LinkedInLearning.Azure.Functions.Startup))]
 
@@ -17,24 +15,14 @@ public class Startup : FunctionsStartup
         var configuration = builder.GetContext().Configuration;
 
         builder.Services.AddSingleton(ConfigureBlobService(configuration));
+        builder.Services.AddSingleton(ConfigureQueueService(configuration));
         builder.Services.AddSingleton<PhotoRepository>();
-
-        var loggerConfiguration = new LoggerConfiguration()
-            .MinimumLevel.Debug()
-            .MinimumLevel.Override("Azure", LogEventLevel.Error)
-            .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
-            .MinimumLevel.Override("DurableTask", LogEventLevel.Error)
-            .Enrich.FromLogContext()
-            .WriteTo.Console()
-            .WriteTo.Seq("http://localhost:6341")
-            .CreateLogger();
-
-        builder.Services.AddLogging(op => op.AddSerilog(loggerConfiguration));
+        builder.Services.AddApplicationInsightsTelemetry();
     }
 
     private static BlobServiceClient ConfigureBlobService(IConfiguration configuration)
     {
-        var connectionString = configuration.GetConnectionString("AzureStorage");
+        var connectionString = configuration.GetValue<string>("AzureStorage");
 
         if (string.IsNullOrEmpty(connectionString))
         {
@@ -42,5 +30,21 @@ public class Startup : FunctionsStartup
         }
 
         return new BlobServiceClient(connectionString);
+    }
+
+    private static QueueClient ConfigureQueueService(IConfiguration configuration)
+    {
+        var connectionString = configuration.GetValue<string>("AzureStorage");
+
+        var queueClient = new QueueClient(
+            connectionString,
+            QueueNames.LinkedInLearningQueue,
+            new QueueClientOptions()
+            {
+                MessageEncoding = QueueMessageEncoding.Base64
+            });
+
+        queueClient.CreateIfNotExists();
+        return queueClient;
     }
 }

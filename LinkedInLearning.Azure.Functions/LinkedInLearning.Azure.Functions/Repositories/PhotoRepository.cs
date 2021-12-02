@@ -1,17 +1,19 @@
-﻿using Serilog;
-
-namespace LinkedInLearning.Azure.Functions.Repositories;
+﻿namespace LinkedInLearning.Azure.Functions.Repositories;
 
 public class PhotoRepository
 {
     private readonly BlobServiceClient _blobServiceClient;
+    private readonly ILogger<PhotoRepository> _logger;
 
-    public PhotoRepository(BlobServiceClient blobServiceClient)
+    public PhotoRepository(BlobServiceClient blobServiceClient,
+        ILogger<PhotoRepository> logger)
     {
         _blobServiceClient = blobServiceClient;
+        _logger = logger;
     }
 
-    public async Task<Guid> InsertAsync(PhotoUploadModel photoUpload, CancellationToken cancellationToken = default)
+    public async Task<(Guid Id, byte[] ContentHash)> InsertAsync(PhotoUploadModel photoUpload,
+        CancellationToken cancellationToken = default)
     {
         if (photoUpload is null)
         {
@@ -24,9 +26,9 @@ public class PhotoRepository
         var blobName = $"{newId}.jpg";
 
         var blobClient = containerClient.GetBlobClient(blobName);
-        await blobClient.UploadAsync(BinaryData.FromString(photoUpload.Photo), cancellationToken);
+        var response = await blobClient.UploadAsync(BinaryData.FromString(photoUpload.Photo), cancellationToken);
 
-        return newId;
+        return (newId, response.Value.ContentHash);
     }
 
     public async Task InsertAsync(Stream stream, string blobName, ImageSize imageSize = default, CancellationToken cancellationToken = default)
@@ -47,7 +49,7 @@ public class PhotoRepository
         }
         catch (Exception ex)
         {
-            Log.Logger.Error(ex.Message);
+            _logger.LogError(ex.Message);
         }
     }
 
