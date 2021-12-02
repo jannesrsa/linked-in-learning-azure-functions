@@ -1,6 +1,3 @@
-using Microsoft.Extensions.Logging;
-using Serilog;
-
 namespace LinkedInLearning.Azure.Functions;
 
 public class PhotosAnalyzer
@@ -8,18 +5,21 @@ public class PhotosAnalyzer
     [FunctionName(nameof(PhotosAnalyzer))]
     public async Task<dynamic> Run(
         [ActivityTrigger] List<byte> contentHash,
+        ILogger logger,
         CancellationToken cancellationToken)
     {
         var result = new
         {
             Name = nameof(PhotosAnalyzer),
-            Count = contentHash.Length,
+            contentHash.Count,
             RandomGuid = Guid.NewGuid()
         };
 
-        Log.Logger.Information("Starting wait");
-        await Task.Delay(2000, cancellationToken);
-        Log.Logger.Information("Stop wait");
+        logger.LogInformation("Start wait");
+
+        await Task.Delay(20000, cancellationToken);
+
+        logger.LogInformation("Stop wait");
 
         return result;
     }
