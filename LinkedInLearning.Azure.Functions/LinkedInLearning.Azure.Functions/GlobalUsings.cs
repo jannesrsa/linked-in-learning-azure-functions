@@ -11,3 +11,5 @@ global using Microsoft.Azure.WebJobs;
 global using Microsoft.Azure.WebJobs.Extensions.Http;
 global using Microsoft.Extensions.Logging;
 global using Azure.Storage.Blobs;
+global using System.Net.Http.Json;
+global using Microsoft.Azure.WebJobs.Extensions.DurableTask;

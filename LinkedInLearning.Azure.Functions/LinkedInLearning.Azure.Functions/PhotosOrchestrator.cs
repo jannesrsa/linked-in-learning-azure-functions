@@ -1,43 +1,38 @@
+using System.Net.Http.Json;
 using Microsoft.Azure.WebJobs.Extensions.DurableTask;
 
 namespace LinkedInLearning.Azure.Functions
 {
-    public static class PhotosOrchestrator
+    public  class PhotosOrchestrator
     {
-        [FunctionName("Function1_HttpStart")]
-        public static async Task<HttpResponseMessage> HttpStart(
+        [FunctionName("PhotosOrchestrator_HttpStart")]
+        public  async Task<HttpResponseMessage> HttpStart(
             [HttpTrigger(AuthorizationLevel.Anonymous, "get", "post")] HttpRequestMessage req,
             [DurableClient] IDurableOrchestrationClient starter,
-            ILogger log)
+            ILogger log,
+            CancellationToken cancellationToken)
         {
+            var photoUpload = await req.Content.ReadFromJsonAsync<PhotoUploadModel>(cancellationToken: cancellationToken);
+
             // Function input comes from the request content.
-            string instanceId = await starter.StartNewAsync("Function1", null);
+            string instanceId = await starter.StartNewAsync("PhotosOrchestrator", photoUpload);
 
             log.LogInformation($"Started orchestration with ID = '{instanceId}'.");
 
             return starter.CreateCheckStatusResponse(req, instanceId);
         }
 
-        [FunctionName("Function1")]
-        public static async Task<List<string>> RunOrchestrator(
+        [FunctionName("PhotosOrchestrator")]
+        public static async Task<dynamic> RunOrchestrator(
             [OrchestrationTrigger] IDurableOrchestrationContext context)
         {
-            var outputs = new List<string>();
+            var photoUpload = context.GetInput<PhotoUploadModel>();
 
-            // Replace "hello" with the name of your Durable Activity Function.
-            outputs.Add(await context.CallActivityAsync<string>("Function1_Hello", "Tokyo"));
-            outputs.Add(await context.CallActivityAsync<string>("Function1_Hello", "Seattle"));
-            outputs.Add(await context.CallActivityAsync<string>("Function1_Hello", "London"));
+            var photoBytes = await context.CallActivityAsync<byte[]>(nameof(PhotoUpload), photoUpload);
 
-            // returns ["Hello Tokyo!", "Hello Seattle!", "Hello London!"]
-            return outputs;
-        }
+            var analysis = await context.CallActivityAsync<dynamic>(nameof(PhotosAnalyzer), photoUpload);
 
-        [FunctionName("Function1_Hello")]
-        public static string SayHello([ActivityTrigger] string name, ILogger log)
-        {
-            log.LogInformation($"Saying hello to {name}.");
-            return $"Hello {name}!";
+            return analysis;
         }
     }
 }
