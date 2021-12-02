@@ -15,13 +15,23 @@ public class Startup : FunctionsStartup
         var configuration = builder.GetContext().Configuration;
 
         builder.Services.AddSingleton(ConfigureBlobService(configuration));
+        builder.Services.AddSingleton(ConfigureQueueService(configuration));
         builder.Services.AddSingleton<PhotoRepository>();
         builder.Services.AddApplicationInsightsTelemetry();
     }
 
+    private static QueueClient ConfigureQueueService(IConfiguration configuration)
+    {
+        var connectionString = configuration.GetValue<string>("AzureStorage");
+
+        var queueClient = new QueueClient(connectionString, QueueNames.LinkedInLearningQueue);
+        queueClient.CreateIfNotExists();
+        return queueClient;
+    }
+
     private static BlobServiceClient ConfigureBlobService(IConfiguration configuration)
     {
-        var connectionString = configuration.GetConnectionString("AzureStorage");
+        var connectionString = configuration.GetValue<string>("AzureStorage");
 
         if (string.IsNullOrEmpty(connectionString))
         {
