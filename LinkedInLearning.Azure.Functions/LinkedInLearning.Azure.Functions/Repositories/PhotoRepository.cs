@@ -11,7 +11,7 @@ public class PhotoRepository
         _blobServiceClient = blobServiceClient;
     }
 
-    public async Task<Guid> InsertAsync(PhotoUploadModel photoUpload, CancellationToken cancellationToken = default)
+    public async Task<(Guid Id, byte[] ContentHash)> InsertAsync(PhotoUploadModel photoUpload, CancellationToken cancellationToken = default)
     {
         if (photoUpload is null)
         {
@@ -24,9 +24,9 @@ public class PhotoRepository
         var blobName = $"{newId}.jpg";
 
         var blobClient = containerClient.GetBlobClient(blobName);
-        await blobClient.UploadAsync(BinaryData.FromString(photoUpload.Photo), cancellationToken);
+        var response = await blobClient.UploadAsync(BinaryData.FromString(photoUpload.Photo), cancellationToken);
 
-        return newId;
+        return (newId, response.Value.ContentHash);
     }
 
     public async Task InsertAsync(Stream stream, string blobName, ImageSize imageSize = default, CancellationToken cancellationToken = default)

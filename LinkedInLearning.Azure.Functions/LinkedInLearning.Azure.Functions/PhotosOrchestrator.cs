@@ -1,12 +1,9 @@
-using System.Net.Http.Json;
-using Microsoft.Azure.WebJobs.Extensions.DurableTask;
-
 namespace LinkedInLearning.Azure.Functions
 {
-    public  class PhotosOrchestrator
+    public class PhotosOrchestrator
     {
         [FunctionName("PhotosOrchestrator_HttpStart")]
-        public  async Task<HttpResponseMessage> HttpStart(
+        public static async Task<HttpResponseMessage> HttpStart(
             [HttpTrigger(AuthorizationLevel.Anonymous, "get", "post")] HttpRequestMessage req,
             [DurableClient] IDurableOrchestrationClient starter,
             ILogger log,
@@ -30,7 +27,7 @@ namespace LinkedInLearning.Azure.Functions
 
             var photoBytes = await context.CallActivityAsync<byte[]>(nameof(PhotoUpload), photoUpload);
 
-            var analysis = await context.CallActivityAsync<dynamic>(nameof(PhotosAnalyzer), photoUpload);
+            var analysis = await context.CallActivityAsync<dynamic>(nameof(PhotosAnalyzer), photoBytes.ToList());
 
             return analysis;
         }
