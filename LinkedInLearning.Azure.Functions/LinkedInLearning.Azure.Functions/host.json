@@ -3,7 +3,8 @@
   "logging": {
     "logLevel": {
       "default": "Error",
-      "Function.PhotosAnalyzer": "Information"
+      "Function.PhotosAnalyzer": "Information",
+      "Function.PhotoAzureQueueStorage": "Information"
     }
   }
 }

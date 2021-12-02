@@ -20,15 +20,6 @@ public class Startup : FunctionsStartup
         builder.Services.AddApplicationInsightsTelemetry();
     }
 
-    private static QueueClient ConfigureQueueService(IConfiguration configuration)
-    {
-        var connectionString = configuration.GetValue<string>("AzureStorage");
-
-        var queueClient = new QueueClient(connectionString, QueueNames.LinkedInLearningQueue);
-        queueClient.CreateIfNotExists();
-        return queueClient;
-    }
-
     private static BlobServiceClient ConfigureBlobService(IConfiguration configuration)
     {
         var connectionString = configuration.GetValue<string>("AzureStorage");
@@ -39,5 +30,21 @@ public class Startup : FunctionsStartup
         }
 
         return new BlobServiceClient(connectionString);
+    }
+
+    private static QueueClient ConfigureQueueService(IConfiguration configuration)
+    {
+        var connectionString = configuration.GetValue<string>("AzureStorage");
+
+        var queueClient = new QueueClient(
+            connectionString,
+            QueueNames.LinkedInLearningQueue,
+            new QueueClientOptions()
+            {
+                MessageEncoding = QueueMessageEncoding.Base64
+            });
+
+        queueClient.CreateIfNotExists();
+        return queueClient;
     }
 }
